@@ -31,3 +31,46 @@ class oracleJava {
 }
 
 include oracleJava
+
+# Install a Java app
+class html5Poc {
+    $app_zip = 'ateam-html5-poc-0.1-20150312.224228-1.zip'
+    $app_url = "http://kfgodel.info:8081/nexus/content/repositories/snapshots/ar/com/tenpines/ateam-html5-poc/0.1-SNAPSHOT/${app_zip}"
+
+    $working_dir = '/home/vagrant'
+    file { "${working_dir}":
+      ensure => "directory"
+    }
+
+    exec{ "download-app-zip":
+        provider => shell,
+        command => "cd ${working_dir}; wget ${app_url}" ,
+        path => "/usr/bin/:/bin/",
+        creates => "${working_dir}/${app_zip}",
+        timeout =>  500,
+        require => File["${working_dir}"]
+    }
+
+    package { "unzip":}
+
+
+    $app_dir = "${working_dir}/ateam-html5-poc"
+    exec{ "decompress-zip":
+        provider => shell,
+        command => "cd ${working_dir}; unzip ${app_zip}" ,
+        path => "/usr/bin/:/bin/",
+        creates => "${app_dir}",
+        require => [ Package["unzip"], Exec["download-app-zip"] ]
+    }
+
+    exec{ "start-app":
+        provider => shell,
+        command => "cd ${app_dir}/bin; ./wrapper.sh start" ,
+        path => "/usr/bin/:/bin/",
+        creates => "${app_dir}/bin/EXECUTABLE_CONTAINER.pid",
+        require => [ Package["unzip"], Exec["download-app-zip"] ]
+    }
+
+}
+
+include html5Poc
